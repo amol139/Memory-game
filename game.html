@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>memory game</title>
+<style>
+canvas{
+	border : 1px black solid;
+	border-radius : 10px;
+}
+</style>
+</head>
+<body>
+
+<canvas id = "canvas"></canvas>
+
+<script src = "processing.js"></script>
+
+<script type = "application/processing" data-processing-target = "canvas">
+
+size(500, 500);
+
+var sceneCount = 0;
+var points = 0;
+var columns = 5;
+var rows = 4;
+
+var tile = function(x, y, w, face){
+	this.x = x;
+	this.y = y;
+	this.w = w;
+	this.face = face;
+	this.isFaceUp = false;
+	this.matched = false;
+};
+
+tile.prototype.faceDown = function(){
+	if(this.matched === false){
+		rectMode(CENTER);
+		stroke(0);
+		strokeWeight(1);
+		fill(255);
+		rect(this.x, this.y, this.w, this.w, 10);
+		this.isFaceUp = false;
+	}
+};
+
+tile.prototype.faceUp = function(){
+	rectMode(CENTER);
+	stroke(0);
+	fill(this.face);
+	strokeWeight(1);
+	rect(this.x, this.y, this.w, this.w, 10);
+	this.isFaceUp = true;
+};
+
+tile.prototype.isInside = function(){
+	if(mouseX > this.x-this.w/2 && mouseX < this.x+this.w/2 && mouseY > this.y-this.w/2 && mouseY < this.y+this.w/2){
+		return true;
+	}else{
+		return false;
+	}
+};
+
+var possible = [
+	color(255, 0, 0),
+	color(0, 255, 0),
+	color(0, 0, 255),
+	color(0, 255, 255),
+	color(255, 255, 0),
+	color(255, 0, 255),
+	color(0, 0, 0),
+	color(200),
+	color(255 ,100, 0),
+	color(0, 255, 0, 100)
+];
+
+var selected = [];
+for(var i = 0; i < 10; i++){
+	var randInd = floor(random(0, possible.length));
+	var face = possible[randInd];
+	selected.push(face);
+	selected.push(face);
+	possible.splice(randInd, 1);
+}
+selected.sort(function(){
+	return (0.5-random());
+});
+var tiles = [];
+for(var i = 0; i < columns; i++){
+	for(var j = 0; j < rows; j++){
+		tiles.push(new tile((i * 80) + 85, (j * 80) + 120, 60, selected.pop()));
+	}
+}
+background(255);
+for(var i = 0; i < tiles.length; i++){
+	var t = tiles[i];
+	if(t.matched === false){
+		t.faceDown();
+	}else{
+		t.faceUp();
+	}
+}
+
+var numFlipped = 0;
+var delayStartFC = null;
+var tils = [];
+
+mouseClicked = function() {
+    	for (var i = 0; i < tiles.length; i++) {
+        		if (tiles[i].isInside()) {
+            			if (numFlipped < 2 && !tiles[i].isFaceUp) {
+                				tiles[i].faceUp();
+                				numFlipped++;
+				tils.push(i);
+                				if (numFlipped === 2) {
+                    				delayStartFC = frameCount;
+                    				loop();
+                				}
+            			} 
+        		}
+    	}
+};
+
+draw = function() {
+    	if (delayStartFC && (frameCount - delayStartFC) > 30) {
+        		if(tiles[tils[0]].face === tiles[tils[1]].face){
+			tiles[tils[0]].matched = true;
+			tiles[tils[1]].matched = true;
+		}else{
+			tiles[tils[0]].faceDown();
+			tiles[tils[1]].faceDown();
+		}
+        		numFlipped = 0;
+        		delayStartFC = null;
+        		noLoop();
+		tils = [];
+    	}
+};
+
+</script>
+
+</body>
+</html>
